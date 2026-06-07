@@ -1,52 +1,101 @@
-<!-- Dashboard -->
-<a href="/keuangan_pribadi/index.php">
-    Dashboard
-</a>
+<?php
+session_start();
+require_once "../config/database.php";
 
-<?php if ($_SESSION['user']['role'] == 1): ?>
+// TAMBAH USER
+if (isset($_POST['tambah'])) {
 
-    <!-- MENU ADMIN -->
+    $nama     = trim($_POST['nama']);
+    $username = trim($_POST['username']);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $id_role  = $_POST['id_role'];
 
-    <a href="/keuangan_pribadi/pages/admin/user/index.php">
-        Manajemen User
-    </a>
+    $stmt = $conn->prepare("
+        INSERT INTO users
+        (nama, username, password, id_role)
+        VALUES (?, ?, ?, ?)
+    ");
 
-    <a href="/keuangan_pribadi/pages/kategori/index.php">
-        Kategori
-    </a>
+    $stmt->execute([
+        $nama,
+        $username,
+        $password,
+        $id_role
+    ]);
 
-    <a href="/keuangan_pribadi/pages/transaksi/index.php">
-        Transaksi
-    </a>
+    header("Location: ../pages/admin/user/index.php");
+    exit;
+}
 
-    <a href="/keuangan_pribadi/pages/laporan.php">
-        Laporan
-    </a>
+// UPDATE USER
+if (isset($_POST['update'])) {
 
-<?php else: ?>
+    $id_user  = $_POST['id_user'];
+    $nama     = trim($_POST['nama']);
+    $username = trim($_POST['username']);
+    $id_role  = $_POST['id_role'];
 
-    <!-- MENU USER -->
+    // Jika password diisi
+    if (!empty($_POST['password'])) {
 
-    <a href="/keuangan_pribadi/pages/user/dashboard.php">
-        Dashboard Saya
-    </a>
+        $password = password_hash(
+            $_POST['password'],
+            PASSWORD_DEFAULT
+        );
 
-    <a href="/keuangan_pribadi/pages/transaksi/index.php">
-        Transaksi Saya
-    </a>
+        $stmt = $conn->prepare("
+            UPDATE users
+            SET
+                nama = ?,
+                username = ?,
+                password = ?,
+                id_role = ?
+            WHERE id_user = ?
+        ");
 
-    <a href="/keuangan_pribadi/pages/laporan.php">
-        Laporan Saya
-    </a>
+        $stmt->execute([
+            $nama,
+            $username,
+            $password,
+            $id_role,
+            $id_user
+        ]);
 
-    <a href="/keuangan_pribadi/pages/user/profil.php">
-        Profil Saya
-    </a>
+    } else {
 
-<?php endif; ?>
+        $stmt = $conn->prepare("
+            UPDATE users
+            SET
+                nama = ?,
+                username = ?,
+                id_role = ?
+            WHERE id_user = ?
+        ");
 
-<hr>
+        $stmt->execute([
+            $nama,
+            $username,
+            $id_role,
+            $id_user
+        ]);
+    }
 
-<a href="/keuangan_pribadi/auth/logout.php">
-    Logout
-</a>
+    header("Location: ../pages/admin/user/index.php");
+    exit;
+}
+
+// HAPUS USER
+if (isset($_GET['hapus'])) {
+
+    $id_user = $_GET['hapus'];
+
+    $stmt = $conn->prepare("
+        DELETE FROM users
+        WHERE id_user = ?
+    ");
+
+    $stmt->execute([$id_user]);
+
+    header("Location: ../pages/admin/user/index.php");
+    exit;
+}
